@@ -129,7 +129,7 @@ function App() {
           {uploading && (
             <div className="progress mt-2">
               <div
-                className="progress-bar progress-bar-striped progress-bar-animated"
+                className="progress-bar progress-bar-striped progress-bar-animated bg-success"
                 role="progressbar"
                 style={{ width: `${uploadProgress}%` }}
                 aria-valuenow={uploadProgress}
@@ -171,11 +171,11 @@ function App() {
                     href={file.viewUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-info"
+                    className="text-info text-decoration-none"
                   >
                     {file.filename}
                   </a>
-                  {" | "}
+                  {"  |  "}
                   <a
                     href={file.downloadUrl}
                     download
