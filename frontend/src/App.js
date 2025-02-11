@@ -33,13 +33,19 @@ function App() {
     const selectedFiles = event.target.files;
     const validFiles = [];
     let fileError = "";
+    const maxSize = 50 * 1024 * 1024;
 
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
       const fileType = file.type.split("/")[0];
 
       if (fileType === "audio") {
-        validFiles.push(file);
+        if (file.size <= maxSize) {
+          validFiles.push(file);
+        } else {
+          fileError = "File size exceeds the 50MB limit.";
+          break;
+        }
       } else {
         fileError = "Please select only audio files.";
       }
