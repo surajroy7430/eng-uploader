@@ -16,9 +16,9 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 app.use(cors({
-  origin: 'https://eng-song-uploader.vercel.app',
+  origin: '*',
   methods: ['GET', 'PUT', 'POST', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type'],
 }));
 
 const PORT = process.env.PORT || 4000;
