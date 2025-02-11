@@ -13,7 +13,11 @@ require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'https://eng-song-uploader.vercel.app',
+  methods: ['GET', 'PUT', 'POST', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 const PORT = process.env.PORT || 4000;
 const BASE_URL = process.env.BASE_URL;
@@ -34,6 +38,9 @@ const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // Set a limit to 100MB
+  },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ["audio/mpeg", "audio/wav", "audio/flac", "audio/ogg"];
     if (allowedTypes.includes(file.mimetype)) {
@@ -42,7 +49,7 @@ const upload = multer({
       cb(
         new Error(
           "Invalid file type. Only audio files (MP3, WAV, FLAC, OGG) are allowed."
-        )
+        ), false
       );
     }
   },
