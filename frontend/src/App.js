@@ -167,7 +167,7 @@ function App() {
                 className="list-group-item d-flex justify-content-between align-items-center bg-dark text-white border-light"
               >
                 <label className="d-block text-truncate" style={{cursor: "text"}}>
-                  {file.filename.replace(/_/g, " ")}
+                  {file.filename.replace(/_/g, " ").replace(/\.[^/.]+$/, '')}
                 </label>
 
                 <div>
