@@ -156,50 +156,89 @@ function App() {
         </div>
 
         {/* Uploaded Files List */}
-        <h4 className="mt-5 text-center mb-3 text-uppercase">Uploaded Songs</h4>
         {uploadedFiles.length === 0 ? (
-          <p className="text-center">No songs uploaded yet.</p>
+          <>
+            <h4 className="mt-5 text-center mb-3 text-uppercase">
+              Uploaded Songs
+            </h4>
+            <p className="text-center">No songs uploaded yet.</p>
+          </>
         ) : (
-          <ul className="list-group mt-3">
-            {uploadedFiles.map((file) => (
-              <li
-                key={file._id}
-                className="list-group-item d-flex justify-content-between align-items-center bg-dark text-white border-light"
-              >
-                <label className="d-block text-truncate" style={{cursor: "text"}}>
-                  {file.filename.replace(/_/g, " ").replace(/\.[^/.]+$/, '')}
-                </label>
-
-                <div>
-                  <a
-                    href={file.viewUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-sm btn-info ms-2 me-2"
-                  >
-                    View
-                  </a>
-                  {" | "}
-                  <a
-                    href={file.downloadUrl}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-sm btn-success ms-2 me-2"
-                  >
-                    Download
-                  </a>
-                  {" | "}
-                  <button
-                    className="btn btn-danger btn-sm ms-2"
-                    onClick={() => handleDelete(file._id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <>
+            <h4 className="mt-5 text-center mb-3 text-uppercase">
+              Uploaded Songs ({uploadedFiles.length})
+            </h4>
+            <div className="table-responsive">
+              <table className="table table-dark table-bordered table-striped text-white">
+                <thead className="thead-light">
+                  <tr>
+                    <th scope="col" className="text-center">
+                      #
+                    </th>
+                    <th scope="col">Filename</th>
+                    <th scope="col" className="text-center">
+                      View
+                    </th>
+                    <th scope="col" className="text-center">
+                      Download
+                    </th>
+                    <th scope="col" className="text-center">
+                      Delete
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uploadedFiles
+                    .slice()
+                    .sort((a, b) =>
+                      a.filename
+                        .replace(/_/g, " ")
+                        .localeCompare(b.filename.replace(/_/g, " ")
+                      )
+                    )
+                    .map((file, index) => (
+                      <tr key={file._id}>
+                        <td scope="row" className="text-center">{index + 1}</td>
+                        <td>
+                          {file.filename
+                            .replace(/_/g, " ")
+                            .replace(/\.[^/.]+$/, "")}
+                        </td>
+                        <td className="text-center">
+                          <a
+                            href={file.viewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-info"
+                          >
+                            View
+                          </a>
+                        </td>
+                        <td className="text-center">
+                          <a
+                            href={file.downloadUrl}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-success"
+                          >
+                            Download
+                          </a>
+                        </td>
+                        <td className="text-center">
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(file._id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
