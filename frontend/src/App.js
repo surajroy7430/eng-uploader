@@ -172,7 +172,7 @@ function App() {
                   rel="noopener noreferrer"
                   className="text-info text-decoration-none"
                 >
-                  {file.filename}
+                  {file.filename.replace(/_/g, " ")}
                 </a>
                 <div>
                   <a
