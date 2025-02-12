@@ -14,8 +14,8 @@ const {
 require("dotenv").config();
 
 const app = express();
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use(express.json({ limit: "200mb" }));
+app.use(express.urlencoded({ extended: true, limit: "200mb" }));
 
 app.use(cors({
   origin: '*',
@@ -49,7 +49,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 100 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ["audio/mpeg", "audio/wav", "audio/flac", "audio/ogg"];
     if (allowedTypes.includes(file.mimetype)) {
@@ -211,6 +211,9 @@ app.delete("/files/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete file" });
   }
 });
+
+// Increase timeout (5 minutes)
+server.timeout = 5 * 60 * 1000;
 
 app.use((req, res) => res.send(`Server running on - ${BASE_URL}`));
 app.listen(PORT, () => console.log(`Server running on port - ${PORT}`));

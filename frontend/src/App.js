@@ -33,7 +33,7 @@ function App() {
     const selectedFiles = event.target.files;
     const validFiles = [];
     let fileError = "";
-    const maxSize = 50 * 1024 * 1024;
+    const maxSize = 100 * 1024 * 1024;
 
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
@@ -43,7 +43,7 @@ function App() {
         if (file.size <= maxSize) {
           validFiles.push(file);
         } else {
-          fileError = "File size exceeds the 50MB limit.";
+          fileError = "File size exceeds the 100MB limit.";
           break;
         }
       } else {
