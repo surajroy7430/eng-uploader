@@ -1,8 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
 const multer = require("multer");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const {
@@ -14,8 +12,8 @@ const {
 require("dotenv").config();
 
 const app = express();
-app.use(express.json({ limit: "200mb" }));
-app.use(express.urlencoded({ extended: true, limit: "200mb" }));
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 
 app.use(cors({
   origin: '*',
@@ -38,14 +36,7 @@ const s3 = new S3Client({
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
 
 // Multer Storage for AWS S3
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Temporary storage
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${file.originalname.replace(/\s+/g, "_")}`);
-  },
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
@@ -92,7 +83,6 @@ app.post("/upload", upload.array("files"), async (req, res) => {
 
     const uploadedFiles = await Promise.all(
       req.files.map(async (file) => {
-        const fileStream = fs.createReadStream(file.path);
         const fileKey = file.originalname.replace(/\s+/g, "_");
 
         // 🔹 Upload to S3 with public read access
@@ -100,14 +90,14 @@ app.post("/upload", upload.array("files"), async (req, res) => {
           new PutObjectCommand({
             Bucket: BUCKET_NAME,
             Key: fileKey,
-            Body: fileStream,
+            // Body: file.buffer,
             ContentType: file.mimetype,
-            ContentDisposition: `inline; filename="${fileKey}"`, // For view
+            // ContentDisposition: `inline; filename="${fileKey}"`, // For view
           })
         );
 
-        // Delete file from local disk after upload
-        fs.unlinkSync(file.path);
+        // Generate the signed URL, valid for 15 minutes
+        const signedUrl = await getSignedUrl(s3, command, { expiresIn: 900 });
 
         // 🔹 Save Metadata in MongoDB
         const viewUrl = `${BASE_URL}/view/${encodeURIComponent(fileKey)}`;
@@ -122,7 +112,7 @@ app.post("/upload", upload.array("files"), async (req, res) => {
           key: fileKey,
         });
 
-        return newFile;
+        return { signedUrl, newFile };
       })
     );
 
@@ -131,15 +121,6 @@ app.post("/upload", upload.array("files"), async (req, res) => {
     console.error("Upload Error:", error);
     res.status(500).json({ error: "File upload failed" });
   }
-});
-
-// 🔹 Increase request timeout (Fixes large file timeouts)
-app.use((req, res, next) => {
-  res.setTimeout(300000, () => {  // 5 minutes
-    console.log("Request has timed out.");
-    res.status(408).json({ error: "Request Timeout" });
-  });
-  next();
 });
 
 // Get all files
@@ -211,9 +192,6 @@ app.delete("/files/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete file" });
   }
 });
-
-// Increase timeout (5 minutes)
-server.timeout = 5 * 60 * 1000;
 
 app.use((req, res) => res.send(`Server running on - ${BASE_URL}`));
 app.listen(PORT, () => console.log(`Server running on port - ${PORT}`));

@@ -71,9 +71,16 @@ function App() {
     }
 
     try {
-      setTimeout(async () => {
-        const { data } = await axios.post(`${BASE_URL}/upload`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+      const { data } = await axios.post(`${BASE_URL}/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const signedUrl = data.files[i].signedUrl;
+  
+        await axios.put(signedUrl, file, {
+          headers: { "Content-Type": file.type },
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
@@ -81,15 +88,15 @@ function App() {
             setUploadProgress(percentCompleted);
           },
         });
+      }
 
-        setUploading(false);
-        setFiles([]);
-        setUploadProgress(0);
-        document.getElementById("fileInput").value = "";
-        // console.log("files", data.files);
+      setUploading(false);
+      setFiles([]);
+      setUploadProgress(0);
+      document.getElementById("fileInput").value = "";
+      // console.log("files", data.files);
 
-        setUploadedFiles((prevFiles) => [...prevFiles, ...data.files]);
-      }, 2000);
+      setUploadedFiles((prevFiles) => [...prevFiles, ...data.files]);
     } catch (error) {
       setUploading(false);
       setUploadProgress(0);
