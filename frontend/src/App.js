@@ -166,7 +166,7 @@ function App() {
                 key={file._id}
                 className="list-group-item d-flex justify-content-between align-items-center bg-dark text-white border-light"
               >
-                <label className="d-block text-truncate">
+                <label className="d-block text-truncate text-primary">
                   {file.filename.replace(/_/g, " ")}
                 </label>
 
@@ -175,7 +175,7 @@ function App() {
                     href={file.viewUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-sm ms-2 me-2"
+                    className="btn btn-sm btn-link ms-2 me-2"
                   >
                     View
                   </a>
