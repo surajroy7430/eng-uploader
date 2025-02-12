@@ -166,15 +166,20 @@ function App() {
                 key={file._id}
                 className="list-group-item d-flex justify-content-between align-items-center bg-dark text-white border-light"
               >
-                <a
-                  href={file.viewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-info text-decoration-none"
-                >
+                <label className="d-block text-truncate">
                   {file.filename.replace(/_/g, " ")}
-                </a>
+                </label>
+
                 <div>
+                  <a
+                    href={file.viewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-sm ms-2 me-2"
+                  >
+                    View
+                  </a>
+                  {" | "}
                   <a
                     href={file.downloadUrl}
                     download
