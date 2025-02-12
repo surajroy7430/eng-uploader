@@ -124,6 +124,15 @@ app.post("/upload", upload.array("files"), async (req, res) => {
   }
 });
 
+// 🔹 Increase request timeout (Fixes large file timeouts)
+app.use((req, res, next) => {
+  res.setTimeout(300000, () => {  // 5 minutes
+    console.log("Request has timed out.");
+    res.status(408).json({ error: "Request Timeout" });
+  });
+  next();
+});
+
 // Get all files
 app.get("/files", async (req, res) => {
   try {
