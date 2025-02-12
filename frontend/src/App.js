@@ -22,7 +22,7 @@ function App() {
     try {
       const { data } = await axios.get(`${BASE_URL}/files`);
       setUploadedFiles(data);
-      // console.log("object", data);
+      // console.log("object", data)
     } catch (error) {
       console.error("Error fetching files:", error);
     }
@@ -33,7 +33,7 @@ function App() {
     const selectedFiles = event.target.files;
     const validFiles = [];
     let fileError = "";
-    const maxSize = 100 * 1024 * 1024;
+    const maxSize = 50 * 1024 * 1024;
 
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
@@ -43,7 +43,7 @@ function App() {
         if (file.size <= maxSize) {
           validFiles.push(file);
         } else {
-          fileError = "File size exceeds the 100MB limit.";
+          fileError = "File size exceeds the 50MB limit.";
           break;
         }
       } else {
@@ -71,16 +71,9 @@ function App() {
     }
 
     try {
-      const { data } = await axios.post(`${BASE_URL}/upload`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const signedUrl = data.files[i].signedUrl;
-  
-        await axios.put(signedUrl, file, {
-          headers: { "Content-Type": file.type },
+      setTimeout(async () => {
+        const { data } = await axios.post(`${BASE_URL}/upload`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
@@ -88,15 +81,15 @@ function App() {
             setUploadProgress(percentCompleted);
           },
         });
-      }
 
-      setUploading(false);
-      setFiles([]);
-      setUploadProgress(0);
-      document.getElementById("fileInput").value = "";
-      // console.log("files", data.files);
+        setUploading(false);
+        setFiles([]);
+        setUploadProgress(0);
+        document.getElementById("fileInput").value = "";
+        // console.log("files", data.files)
 
-      setUploadedFiles((prevFiles) => [...prevFiles, ...data.files]);
+        setUploadedFiles((prevFiles) => [...prevFiles, ...data.files]);
+      }, 2000);
     } catch (error) {
       setUploading(false);
       setUploadProgress(0);
@@ -173,31 +166,32 @@ function App() {
                 key={file._id}
                 className="list-group-item d-flex justify-content-between align-items-center bg-dark text-white border-light"
               >
+                <a
+                  href={file.viewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-info text-decoration-none"
+                >
+                  {file.filename}
+                </a>
                 <div>
-                  <a
-                    href={file.viewUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-info text-decoration-none"
-                  >
-                    {file.filename}
-                  </a>
-                  {"  |  "}
                   <a
                     href={file.downloadUrl}
                     download
                     target="_blank"
-                    className="btn btn-sm btn-success ms-2"
+                    rel="noopener noreferrer"
+                    className="btn btn-sm btn-success ms-2 me-2"
                   >
                     Download
                   </a>
+                  {" | "}
+                  <button
+                    className="btn btn-danger btn-sm ms-2"
+                    onClick={() => handleDelete(file._id)}
+                  >
+                    Delete
+                  </button>
                 </div>
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={() => handleDelete(file._id)}
-                >
-                  Delete
-                </button>
               </li>
             ))}
           </ul>

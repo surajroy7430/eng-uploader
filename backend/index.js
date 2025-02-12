@@ -12,8 +12,8 @@ const {
 require("dotenv").config();
 
 const app = express();
-app.use(express.json({ limit: "100mb" }));
-app.use(express.urlencoded({ extended: true, limit: "100mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 app.use(cors({
   origin: '*',
@@ -40,7 +40,7 @@ const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ["audio/mpeg", "audio/wav", "audio/flac", "audio/ogg"];
     if (allowedTypes.includes(file.mimetype)) {
@@ -90,14 +90,11 @@ app.post("/upload", upload.array("files"), async (req, res) => {
           new PutObjectCommand({
             Bucket: BUCKET_NAME,
             Key: fileKey,
-            // Body: file.buffer,
+            Body: file.buffer,
             ContentType: file.mimetype,
-            // ContentDisposition: `inline; filename="${fileKey}"`, // For view
+            ContentDisposition: `inline; filename="${fileKey}"`, // For view
           })
         );
-
-        // Generate the signed URL, valid for 15 minutes
-        const signedUrl = await getSignedUrl(s3, command, { expiresIn: 900 });
 
         // 🔹 Save Metadata in MongoDB
         const viewUrl = `${BASE_URL}/view/${encodeURIComponent(fileKey)}`;
@@ -112,7 +109,7 @@ app.post("/upload", upload.array("files"), async (req, res) => {
           key: fileKey,
         });
 
-        return { signedUrl, newFile };
+        return newFile;
       })
     );
 
