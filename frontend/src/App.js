@@ -22,7 +22,7 @@ function App() {
     try {
       const { data } = await axios.get(`${BASE_URL}/files`);
       setUploadedFiles(data);
-      // console.log("object", data)
+      // console.log("object", data);
     } catch (error) {
       console.error("Error fetching files:", error);
     }
@@ -86,7 +86,7 @@ function App() {
         setFiles([]);
         setUploadProgress(0);
         document.getElementById("fileInput").value = "";
-        // console.log("files", data.files)
+        // console.log("files", data.files);
 
         setUploadedFiles((prevFiles) => [...prevFiles, ...data.files]);
       }, 2000);
