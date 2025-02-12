@@ -169,7 +169,7 @@ function App() {
               Uploaded Songs ({uploadedFiles.length})
             </h4>
             <div className="table-responsive">
-              <table className="table table-dark table-bordered table-striped text-white">
+              <table className="table table-dark table-bordered table-hover text-white">
                 <thead className="thead-light">
                   <tr>
                     <th scope="col" className="text-center">
