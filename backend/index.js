@@ -1,6 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 const multer = require("multer");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const {
@@ -36,7 +38,14 @@ const s3 = new S3Client({
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
 
 // Multer Storage for AWS S3
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Temporary storage
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${file.originalname.replace(/\s+/g, "_")}`);
+  },
+});
 
 const upload = multer({
   storage,
@@ -46,11 +55,7 @@ const upload = multer({
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(
-        new Error(
-          "Invalid file type. Only audio files (MP3, WAV, FLAC, OGG) are allowed."
-        ), false
-      );
+      cb(new Error("Invalid file type."), false);
     }
   },
 });
@@ -87,6 +92,7 @@ app.post("/upload", upload.array("files"), async (req, res) => {
 
     const uploadedFiles = await Promise.all(
       req.files.map(async (file) => {
+        const fileStream = fs.createReadStream(file.path);
         const fileKey = file.originalname.replace(/\s+/g, "_");
 
         // 🔹 Upload to S3 with public read access
@@ -94,11 +100,14 @@ app.post("/upload", upload.array("files"), async (req, res) => {
           new PutObjectCommand({
             Bucket: BUCKET_NAME,
             Key: fileKey,
-            Body: file.buffer,
+            Body: fileStream,
             ContentType: file.mimetype,
             ContentDisposition: `inline; filename="${fileKey}"`, // For view
           })
         );
+
+        // Delete file from local disk after upload
+        fs.unlinkSync(file.path);
 
         // 🔹 Save Metadata in MongoDB
         const viewUrl = `${BASE_URL}/view/${encodeURIComponent(fileKey)}`;
