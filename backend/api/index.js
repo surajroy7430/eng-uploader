@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const multer = require("multer");
+const musicMetadata = require("music-metadata");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const {
   S3Client,
@@ -13,13 +14,17 @@ require("dotenv").config();
 
 const app = express();
 app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, parameterLimit: 100000, limit: "50mb" }));
+app.use(
+  express.urlencoded({ extended: true, parameterLimit: 100000, limit: "50mb" })
+);
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'PUT', 'POST', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "PUT", "POST", "DELETE"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 
 const PORT = process.env.PORT || 4000;
 const BASE_URL = process.env.BASE_URL;
@@ -34,6 +39,17 @@ const s3 = new S3Client({
   },
 });
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
+
+const getFormattedDate = () => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+
+  const randomNum = String(Math.floor(100000 + Math.random() * 900000)); // Generates 6-digit random number
+
+  return `${year}${month}${day}${randomNum}`;
+};
 
 // Multer Storage for AWS S3
 const storage = multer.memoryStorage();
@@ -70,6 +86,7 @@ const FileSchema = new mongoose.Schema({
   filename: String,
   viewUrl: String,
   downloadUrl: String,
+  coverImageUrl: String,
   key: String,
   uploadedAt: { type: Date, default: Date.now },
 });
@@ -84,6 +101,45 @@ app.post("/upload", upload.array("files"), async (req, res) => {
     const uploadedFiles = await Promise.all(
       req.files.map(async (file) => {
         const fileKey = file.originalname.replace(/\s+/g, "_");
+
+        let coverImageKey = null;
+        if (file.mimetype.startsWith("audio/")) {
+          const metadata = await musicMetadata.parseBuffer(file.buffer);
+
+          const fileBaseName = file.originalname
+            .replace(/\s+/g, "_")
+            .replace(/\.[a-zA-Z0-9]+$/, "");
+
+          const year = metadata.common.year || null;
+          const language = metadata.common.language || "English";
+
+          if (metadata.common.picture && metadata.common.picture.length > 0) {
+            const coverImageBuffer = metadata.common.picture[0].data;
+
+            const imageMimeType =
+              metadata.common.picture[0].format ||
+              "image/jpg" ||
+              "image/jpeg" ||
+              "image/png";
+              
+            const imageExt = imageMimeType.split("/")[1];
+
+            coverImageKey = `${fileBaseName}-${language}-${
+              year ? year : null
+            }-${getFormattedDate()}.${imageExt}`;
+
+            // Upload cover image to S3
+            await s3.send(
+              new PutObjectCommand({
+                Bucket: BUCKET_NAME,
+                Key: coverImageKey,
+                Body: coverImageBuffer,
+                ContentType: imageMimeType,
+                ContentDisposition: `inline; filename="${coverImageKey}"`,
+              })
+            );
+          }
+        }
 
         // 🔹 Upload to S3 with public read access
         await s3.send(
@@ -101,11 +157,15 @@ app.post("/upload", upload.array("files"), async (req, res) => {
         const downloadUrl = `${BASE_URL}/download/${encodeURIComponent(
           fileKey
         )}`;
+        const coverImageUrl = coverImageKey
+          ? `${BASE_URL}/viewCoverImage/${encodeURIComponent(coverImageKey)}`
+          : null;
 
         const newFile = await File.create({
           filename: fileKey,
           viewUrl,
           downloadUrl,
+          coverImageUrl,
           key: fileKey,
         });
 
@@ -144,6 +204,19 @@ app.get("/view/:key", async (req, res) => {
   }
 });
 
+// **View Cover Image** - API for viewing the cover image
+app.get("/viewCoverImage/:key", async (req, res) => {
+  try {
+    const coverImageKey = decodeURIComponent(req.params.key);
+    const coverImageUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${coverImageKey}`;
+    res.setHeader("Content-Disposition", "inline"); // Instruct browser to display inline
+    res.redirect(coverImageUrl); // Directly redirects to the public URL for the cover image
+  } catch (error) {
+    console.error("View Cover Image Error:", error);
+    res.status(500).json({ error: "Failed to view cover image" });
+  }
+});
+
 // 📥 **Download File (Forces Download)**
 app.get("/download/:key", async (req, res) => {
   try {
@@ -179,6 +252,16 @@ app.delete("/files/:id", async (req, res) => {
         Key: file.key,
       })
     );
+
+    if (file.coverImageUrl) {
+      const coverImageKey = file.coverImageUrl.split("/").pop();
+      await s3.send(
+        new DeleteObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: coverImageKey,
+        })
+      );
+    }
 
     // 🔹 Remove from MongoDB
     await file.deleteOne();

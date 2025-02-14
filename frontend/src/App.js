@@ -177,6 +177,9 @@ function App() {
                     </th>
                     <th scope="col">Filename</th>
                     <th scope="col" className="text-center">
+                      Cover Image
+                    </th>
+                    <th scope="col" className="text-center">
                       View
                     </th>
                     <th scope="col" className="text-center">
@@ -193,16 +196,31 @@ function App() {
                     .sort((a, b) =>
                       a.filename
                         .replace(/_/g, " ")
-                        .localeCompare(b.filename.replace(/_/g, " ")
-                      )
+                        .localeCompare(b.filename.replace(/_/g, " "))
                     )
                     .map((file, index) => (
-                      <tr key={file._id}>
-                        <td scope="row" className="text-center">{index + 1}</td>
+                      <tr key={index + 1}>
+                        <td scope="row" className="text-center">
+                          {index + 1}
+                        </td>
                         <td>
                           {file.filename
                             .replace(/_/g, " ")
                             .replace(/\.[^/.]+$/, "")}
+                        </td>
+                        <td scope="row" className="text-center">
+                          {file.coverImageUrl ? (
+                            <button
+                              className="btn btn-info btn-sm"
+                              onClick={() =>
+                                window.open(file.coverImageUrl, "_blank")
+                              }
+                            >
+                              Cover Image
+                            </button>
+                          ) : (
+                            <span>No Cover Image</span>
+                          )}
                         </td>
                         <td className="text-center">
                           <a
